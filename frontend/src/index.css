@@ -179,6 +179,37 @@
     transform: rotate(180deg);
   }
 
+  .timeline-card-glow {
+    @apply relative overflow-hidden;
+    box-shadow: 0 8px 30px rgba(181, 138, 75, 0.08), 0 0 0 1px rgba(181, 138, 75, 0.12);
+  }
+  .dark .timeline-card-glow {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(181, 138, 75, 0.25);
+  }
+
+  .floral-watermark {
+    @apply absolute inset-0 pointer-events-none opacity-[0.04] dark:opacity-[0.06];
+    background-image: url('/assets/florals/corner-rose.svg');
+    background-size: 160px;
+    background-repeat: repeat;
+    background-position: center;
+    mix-blend-mode: multiply;
+  }
+  .dark .floral-watermark {
+    mix-blend-mode: screen;
+  }
+
+  .match-glow {
+    box-shadow: 0 0 35px rgba(181, 138, 75, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.8);
+  }
+  .dark .match-glow {
+    box-shadow: 0 0 35px rgba(181, 138, 75, 0.35), inset 0 0 15px rgba(181, 138, 75, 0.4);
+  }
+
+  .vine-line {
+    @apply absolute w-[2px] bg-gradient-to-b from-rose-200/40 via-amber-200/60 to-rose-200/40 dark:from-rose-900/30 dark:via-amber-700/40 dark:to-rose-900/30;
+  }
+
   .petal-float {
     animation: petal-drift 14s ease-in-out infinite;
   }
