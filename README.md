@@ -7,6 +7,7 @@ Base inicial del proyecto con:
 - Despliegue: Railway con dos servicios Docker separados.
 - Experiencia: invitacion de boda virtual responsive con RSVP por token.
 - Panel admin: login simple + CRUD de invitados + generación de URL/token + tablero RSVP.
+- CMS admin: gestión de secciones dinámicas de Home + cuentas bancarias para aportes.
 
 ## Estructura
 
@@ -19,12 +20,22 @@ Base inicial del proyecto con:
 
 Usa `backend/.env.example` como plantilla.
 
+El esquema de base de datos se gestiona con **Flyway** (`backend/src/main/resources/db/migration/`). Con `SPRING_JPA_HIBERNATE_DDL_AUTO=validate`, Hibernate no crea tablas: las migraciones SQL son la fuente de verdad.
+
+Migraciones incluidas:
+
+- `V1` — tablas de contenido home y cuentas bancarias
+- `V2` — evento global, grupos familiares, invitados y CMS de invitación
+- `V3` — migración de datos desde `guest_invitations` (si existe)
+- `V4` — elimina la tabla legada `guest_invitations`
+- `V5` — historia de amor (settings + entradas por pareja)
+
 ```env
 SERVER_PORT=8080
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/boda
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=postgres
-SPRING_JPA_HIBERNATE_DDL_AUTO=update
+SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 APP_SEED_DEMO_ENABLED=true
 ADMIN_USERNAME=admin
@@ -32,7 +43,19 @@ ADMIN_PASSWORD=admin123
 ADMIN_SESSION_SECRET=change-this-secret
 ADMIN_SESSION_MINUTES=480
 FRONTEND_BASE_URL=http://localhost:5173
+APP_PARTNER_A_USERNAME=esposo
+APP_PARTNER_A_PASSWORD=cambiar-esposo
+APP_PARTNER_A_DISPLAY_NAME=Daniel
+APP_PARTNER_B_USERNAME=esposa
+APP_PARTNER_B_PASSWORD=cambiar-esposa
+APP_PARTNER_B_DISPLAY_NAME=Ana
 ```
+
+### Historia de amor
+
+- **Pareja**: `/pareja/login` — cada uno carga sus momentos (fecha, frase, URL de imagen) sin ver el lado del otro.
+- **Admin**: `/admin/historia-amor` — activar sección en home, publicar y revisar ambos lados.
+- **Público**: la timeline aparece en `/` solo con `enabled` y `published` activos.
 
 ### Frontend (`frontend/.env`)
 
@@ -41,6 +64,25 @@ Usa `frontend/.env.example` como plantilla.
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 ```
+
+### Música ambiental (opcional)
+
+Coloca un archivo `frontend/public/audio/ambient.mp3` para habilitar el botón de música en la invitación personal (`/invitacion/:token`).
+
+### Galería con imágenes
+
+En secciones `gallery`, usa `payloadJson` con items que incluyan `imageUrl` y `alt`:
+
+```json
+{"items":[{"title":"Momento","imageUrl":"https://...","alt":"Descripción"}]}
+```
+
+### Modelo de datos (familias)
+
+- **Evento global** (`/admin/evento`): fecha, lugares y dress code (una sola fuente para home e invitaciones).
+- **Grupos familiares** (`/admin/grupos`): un token por familia con varios miembros (padre, madre, hijos).
+- **RSVP**: el invitado marca checkboxes por miembro y envía una sola confirmación.
+- **Contenido**: home (`/admin/contenido`) e invitación personal (`/admin/contenido-invitacion`) por separado.
 
 ## Ejecucion local
 
@@ -81,6 +123,21 @@ npm run dev
 - Editar invitado: `PUT /api/admin/guests/{id}`
 - Eliminar invitado: `DELETE /api/admin/guests/{id}`
 - Resumen RSVP: `GET /api/admin/rsvp/summary`
+- Listar secciones Home: `GET /api/admin/content-sections`
+- Crear sección Home: `POST /api/admin/content-sections`
+- Actualizar sección Home: `PUT /api/admin/content-sections/{id}`
+- Eliminar sección Home: `DELETE /api/admin/content-sections/{id}`
+- Reordenar secciones Home: `PATCH /api/admin/content-sections/reorder`
+- Listar cuentas bancarias: `GET /api/admin/bank-accounts`
+- Crear cuenta bancaria: `POST /api/admin/bank-accounts`
+- Actualizar cuenta bancaria: `PUT /api/admin/bank-accounts/{id}`
+- Eliminar cuenta bancaria: `DELETE /api/admin/bank-accounts/{id}`
+- Reordenar cuentas bancarias: `PATCH /api/admin/bank-accounts/reorder`
+
+## Endpoints públicos de contenido
+
+- Home dinámica: `GET /api/content/home`
+- Cuentas bancarias habilitadas: `GET /api/content/bank-accounts`
 
 Todos los endpoints admin, excepto login, requieren:
 
@@ -115,6 +172,24 @@ Desde el panel puedes:
 - copiar URL personalizada de invitacion por token,
 - copiar mensaje listo para WhatsApp,
 - ver tablero de confirmaciones (confirmados/no asisten/pendientes/asistentes).
+- gestionar secciones de la Home (crear, editar, eliminar, reordenar).
+- gestionar cuentas bancarias de aporte (crear, editar, eliminar, reordenar, habilitar/deshabilitar).
+
+### Tipos recomendados de sección para Home
+
+- `hero`
+- `countdown` (payload sugerido: `{"targetDateIso":"2026-12-12T16:00:00"}`)
+- `highlights` (payload con `items`)
+- `story` (payload con `items`)
+- `timeline` (payload con `items`)
+- `locations` (payload con `items`)
+- `gallery` (payload con `items`)
+- `generic` (bloque libre con título/subtítulo/cuerpo)
+
+### Aportes bancarios
+
+- Las cuentas bancarias se muestran **solo** en `\u002Finvitacion\u002F:token`.
+- No se renderizan en la Home pública.
 
 ## Docker
 

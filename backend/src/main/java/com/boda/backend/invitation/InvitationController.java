@@ -23,8 +23,8 @@ public class InvitationController {
     }
 
     @GetMapping("/invitations/{token}")
-    public InvitationResponse getInvitation(@PathVariable String token) {
-        return invitationService.getInvitationByToken(token);
+    public InvitationBundleResponse getInvitation(@PathVariable String token) {
+        return invitationService.getInvitationBundle(token);
     }
 
     @PostMapping("/rsvp")

@@ -11,17 +11,20 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.boda.backend.admin.AdminAuthInterceptor;
+import com.boda.backend.partner.PartnerAuthInterceptor;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
     private final AdminAuthInterceptor adminAuthInterceptor;
+    private final PartnerAuthInterceptor partnerAuthInterceptor;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
-    public WebConfig(AdminAuthInterceptor adminAuthInterceptor) {
+    public WebConfig(AdminAuthInterceptor adminAuthInterceptor, PartnerAuthInterceptor partnerAuthInterceptor) {
         this.adminAuthInterceptor = adminAuthInterceptor;
+        this.partnerAuthInterceptor = partnerAuthInterceptor;
     }
 
     @Override
@@ -35,6 +38,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(adminAuthInterceptor).addPathPatterns("/api/admin/**");
+        registry.addInterceptor(partnerAuthInterceptor).addPathPatterns("/api/partner/**");
     }
 
     private String[] parseOrigins() {

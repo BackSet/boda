@@ -1,55 +1,203 @@
-:root {
-  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  --bg-rose: #f8f1f2;
-  --bg-cream: #fff9f4;
-  --bg-sage: #eef3ec;
-  --ink-soft: #5f4d53;
-  --ink-strong: #2f2428;
-  --line-soft: #e4d4d7;
-  --line-strong: #ccb7bc;
-  --accent: #8f5a66;
-  --accent-hover: #774955;
-  --radius-lg: 24px;
-  --radius-md: 16px;
-  --shadow-soft: 0 20px 45px rgba(112, 71, 82, 0.14);
-  color: var(--ink-soft);
-  background-color: var(--bg-rose);
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-ivory: #fffdf8;
+    --bg-blush: #fef4f7;
+    --wedding-ivory: #fffdf8;
+    --wedding-blush: #fef4f7;
+    --wedding-sage: #8fad7f;
+    --wedding-gold: #b58a4b;
+    --wedding-ink: #3f2a34;
+    --accent-rose: #a83d68;
+    --accent-gold: #b58a4b;
+    --text-ink: #3f2a34;
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply m-0 min-w-[320px] bg-zinc-50 text-zinc-700 antialiased transition-colors duration-200 dark:bg-zinc-950 dark:text-zinc-200;
+    color: var(--text-ink);
+    background-image:
+      radial-gradient(circle at 8% 10%, rgba(255, 232, 241, 0.9), transparent 35%),
+      radial-gradient(circle at 92% 2%, rgba(252, 242, 219, 0.75), transparent 33%),
+      radial-gradient(circle at 60% 100%, rgba(244, 250, 240, 0.85), transparent 26%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply m-0 font-serif font-bold tracking-tight text-zinc-900 dark:text-zinc-100;
+    font-family: 'Cormorant Garamond', 'Times New Roman', serif;
+  }
+
+  p {
+    @apply m-0;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  .dark body {
+    color: rgb(228 228 231);
+    background-image:
+      radial-gradient(circle at 8% 10%, rgba(112, 52, 82, 0.35), transparent 36%),
+      radial-gradient(circle at 92% 2%, rgba(98, 73, 31, 0.26), transparent 33%),
+      radial-gradient(circle at 60% 100%, rgba(41, 74, 58, 0.25), transparent 26%);
+  }
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer components {
+  .eyebrow {
+    @apply text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-rose-500 dark:text-rose-300;
+  }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  background:
-    radial-gradient(circle at 8% 12%, rgba(255, 255, 255, 0.75), transparent 30%),
-    radial-gradient(circle at 92% 2%, rgba(239, 243, 236, 0.9), transparent 34%),
-    linear-gradient(165deg, #fdf8f8 0%, #f7edef 42%, #fdf8f4 100%);
-  color: inherit;
-}
+  .ui-section-title {
+    @apply text-3xl md:text-4xl;
+  }
 
-h1,
-h2,
-h3 {
-  font-family: 'Cormorant Garamond', 'Times New Roman', serif;
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--ink-strong);
-  margin: 0;
-}
+  .ui-field-label {
+    @apply grid gap-1 text-sm font-medium text-zinc-700 dark:text-zinc-200;
+  }
 
-p {
-  margin: 0;
-}
+  .fairy-surface {
+    @apply relative overflow-hidden rounded-3xl border border-rose-100/70 bg-white/85 shadow-sm backdrop-blur-sm dark:border-rose-900/40 dark:bg-zinc-900/85;
+  }
 
-a {
-  color: inherit;
+  .fairy-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(125deg, rgba(255, 255, 255, 0.72), transparent 42%),
+      radial-gradient(circle at 8% 8%, rgba(248, 205, 223, 0.28), transparent 45%);
+  }
+
+  .dark .fairy-surface::before {
+    background:
+      linear-gradient(125deg, rgba(255, 255, 255, 0.05), transparent 40%),
+      radial-gradient(circle at 8% 8%, rgba(168, 61, 104, 0.2), transparent 45%);
+  }
+
+  .section-glow {
+    @apply relative;
+  }
+
+  .section-glow::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 1.5rem;
+    pointer-events: none;
+    border: 1px solid rgba(181, 138, 75, 0.2);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  }
+
+  .dark .section-glow::after {
+    border-color: rgba(181, 138, 75, 0.32);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  }
+
+  .ornament-divider {
+    @apply flex items-center justify-center gap-2 text-xs tracking-[0.3em] text-amber-500/80 dark:text-amber-300/70;
+  }
+
+  .ornament-divider::before,
+  .ornament-divider::after {
+    content: '';
+    width: 44px;
+    height: 1px;
+    background: linear-gradient(to right, transparent, currentColor, transparent);
+  }
+
+  .hero-title {
+    @apply text-5xl leading-[0.95] md:text-6xl;
+    text-wrap: balance;
+  }
+
+  .wedding-script {
+    font-family: 'Great Vibes', cursive;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+
+  .wedding-paper {
+    @apply relative;
+    background-color: var(--wedding-ivory);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(255, 232, 241, 0.65), transparent 40%),
+      radial-gradient(circle at 88% 92%, rgba(238, 244, 232, 0.55), transparent 38%),
+      radial-gradient(circle at 50% 50%, rgba(255, 253, 248, 0.9), transparent 70%);
+  }
+
+  .dark .wedding-paper {
+    background-color: rgb(24 24 27);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(112, 52, 82, 0.25), transparent 40%),
+      radial-gradient(circle at 88% 92%, rgba(41, 74, 58, 0.2), transparent 38%);
+  }
+
+  .wedding-frame {
+    @apply relative overflow-hidden rounded-3xl border border-rose-100/80 bg-white/90 shadow-md backdrop-blur-sm dark:border-rose-900/50 dark:bg-zinc-900/90;
+  }
+
+  .wedding-frame::before,
+  .wedding-frame::after {
+    content: '';
+    position: absolute;
+    width: 72px;
+    height: 72px;
+    pointer-events: none;
+    background-image: url('/assets/florals/corner-rose.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.55;
+  }
+
+  .wedding-frame::before {
+    top: 0;
+    left: 0;
+  }
+
+  .wedding-frame::after {
+    bottom: 0;
+    right: 0;
+    transform: rotate(180deg);
+  }
+
+  .petal-float {
+    animation: petal-drift 14s ease-in-out infinite;
+  }
+
+  @keyframes petal-drift {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 0.35;
+    }
+    50% {
+      transform: translateY(-18px) rotate(12deg);
+      opacity: 0.65;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .petal-float {
+      animation: none;
+    }
+  }
 }

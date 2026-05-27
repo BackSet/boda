@@ -1,8 +1,8 @@
 package com.boda.backend.admin;
 
 public record AdminRsvpSummaryResponse(
-        long confirmed,
-        long declined,
-        long pending,
-        long confirmedGuests) {
+        long guestsAttending,
+        long guestsDeclined,
+        long groupsResponded,
+        long groupsPending) {
 }

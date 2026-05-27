@@ -1,50 +1,75 @@
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getInvitationByToken, submitRsvp, type InvitationView } from '../lib/api'
+import { InvitationEnvelope } from '../components/wedding/InvitationEnvelope'
+import { InvitationRevealContent } from '../components/wedding/InvitationRevealContent'
+import { FloatingPetals } from '../components/wedding/FloatingPetals'
+import { UiCard } from '../components/ui'
+import { useInvitationReveal } from '../hooks/useInvitationReveal'
+import {
+  getInvitationBundle,
+  submitRsvp,
+  type InvitationBundle,
+  type MemberRsvp,
+} from '../lib/api'
+import { useInvitationRevealContext } from '../lib/invitation-reveal-context'
 
 type SubmitState = 'idle' | 'sending' | 'success' | 'error'
 
 export function InvitationPage() {
   const { token = '' } = useParams()
-  const [invitation, setInvitation] = useState<InvitationView | null>(null)
+  const [bundle, setBundle] = useState<InvitationBundle | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  const [attending, setAttending] = useState(true)
-  const [guestCount, setGuestCount] = useState(1)
+  const [memberAttendance, setMemberAttendance] = useState<Record<number, boolean>>({})
   const [dietaryRestrictions, setDietaryRestrictions] = useState('')
   const [message, setMessage] = useState('')
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  const dataReady = !loading && !loadError && bundle !== null
+  const { phase, setPhase } = useInvitationRevealContext()
+  const { openEnvelope } = useInvitationReveal(token, dataReady, setPhase, phase)
+
+  const envelopeLabel = useMemo(() => {
+    if (!bundle) {
+      return ''
+    }
+    const primary = bundle.guests.find((guest) => guest.primaryGuest)
+    return bundle.group.displayName || primary?.fullName || 'Familia invitada'
+  }, [bundle])
+
+  useEffect(() => {
+    if (loadError) {
+      setPhase('error')
+    }
+  }, [loadError, setPhase])
+
   useEffect(() => {
     let active = true
-    setLoading(true)
-    setLoadError(null)
 
-    getInvitationByToken(token)
+    getInvitationBundle(token)
       .then((data) => {
         if (!active) {
           return
         }
-        setInvitation(data)
-        if (data.attending !== null) {
-          setAttending(data.attending)
+        setLoadError(null)
+        setBundle(data)
+        setDietaryRestrictions(data.group.dietaryRestrictions ?? '')
+        setMessage(data.group.message ?? '')
+        const attendance: Record<number, boolean> = {}
+        for (const guest of data.guests) {
+          attendance[guest.id] = guest.attending ?? false
         }
-        if (data.guestCount !== null && data.guestCount > 0) {
-          setGuestCount(data.guestCount)
-        } else {
-          setGuestCount(1)
-        }
-        setDietaryRestrictions(data.dietaryRestrictions ?? '')
-        setMessage(data.message ?? '')
+        setMemberAttendance(attendance)
       })
       .catch(() => {
         if (!active) {
           return
         }
         setLoadError(
-          'No encontramos una invitacion valida para este enlace. Verifica tu token.',
+          'No encontramos una invitación válida para este enlace. Verifica tu token.',
         )
       })
       .finally(() => {
@@ -58,175 +83,141 @@ export function InvitationPage() {
     }
   }, [token])
 
-  const guestLimit = useMemo(() => invitation?.maxGuests ?? 1, [invitation])
+  function setMemberAttending(guestId: number, attending: boolean) {
+    setMemberAttendance((current) => ({ ...current, [guestId]: attending }))
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!invitation) {
+    if (!bundle) {
       return
     }
 
     setSubmitState('sending')
     setSubmitError(null)
 
+    const members: MemberRsvp[] = bundle.guests.map((guest) => ({
+      guestId: guest.id,
+      attending: memberAttendance[guest.id] ?? false,
+    }))
+
     try {
       await submitRsvp({
-        token: invitation.token,
-        attending,
-        guestCount: attending ? guestCount : 0,
+        token: bundle.group.token,
+        members,
         dietaryRestrictions,
         message,
       })
       setSubmitState('success')
+      setBundle((current) =>
+        current
+          ? {
+              ...current,
+              group: {
+                ...current.group,
+                dietaryRestrictions,
+                message,
+                respondedAt: new Date().toISOString(),
+              },
+              guests: current.guests.map((guest) => ({
+                ...guest,
+                attending: memberAttendance[guest.id] ?? false,
+              })),
+            }
+          : current,
+      )
     } catch (error) {
       setSubmitState('error')
       setSubmitError(
         error instanceof Error
           ? error.message
-          : 'Ocurrio un error al enviar tu confirmacion.',
+          : 'Ocurrió un error al enviar tu confirmación.',
       )
     }
   }
 
-  if (loading) {
-    return (
-      <main className="editorial-page centered-state">
-        <section className="section panel">
-          <p className="eyebrow">Un momento</p>
-          <h1>Preparando tu invitacion</h1>
-          <p>Cargando detalles para tu experiencia personalizada...</p>
-        </section>
-      </main>
-    )
-  }
-
-  if (loadError || !invitation) {
-    return (
-      <main className="editorial-page centered-state">
-        <section className="section panel">
-          <p className="eyebrow">Token no valido</p>
-          <h1>Invitacion no disponible</h1>
-          <p>{loadError}</p>
-          <Link className="text-link" to="/">
-            Volver al inicio
-          </Link>
-        </section>
-      </main>
-    )
-  }
-
   return (
-    <main className="editorial-page">
-      <section className="section hero invitation-hero">
-        <p className="eyebrow">Invitado especial</p>
-        <h1>{invitation.guestName}</h1>
-        <p className="lead">
-          Nos encantaria compartir contigo este momento.
-          <br />
-          {invitation.eventTitle}
-        </p>
-        <p className="date-label">{invitation.eventDate}</p>
-        <div className="floral-divider">✿ ✿ ✿</div>
-      </section>
-
-      <section className="invitation-shell">
-        <article className="section panel">
-          <h2>Tu agenda de celebracion</h2>
-          <div className="info-grid">
-            <div className="info-block">
-              <h3>Ceremonia</h3>
-              <p>{invitation.ceremonyAddress}</p>
-            </div>
-            <div className="info-block">
-              <h3>Recepcion</h3>
-              <p>{invitation.receptionAddress}</p>
-            </div>
-            <div className="info-block">
-              <h3>Lugares reservados</h3>
-              <p>
-                Puedes confirmar hasta <strong>{guestLimit}</strong>{' '}
-                {guestLimit === 1 ? 'asistente' : 'asistentes'}.
+    <div className="wedding-paper relative min-h-screen">
+      <AnimatePresence mode="wait">
+        {phase === 'loading' && (
+          <motion.div
+            key="loading"
+            className="relative flex min-h-[calc(100dvh-2rem)] items-center justify-center px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <FloatingPetals count={4} />
+            <UiCard className="relative z-10 p-8 text-center">
+              <p className="eyebrow">Un momento</p>
+              <h1 className="mt-2 font-serif text-4xl">Preparando tu invitación</h1>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                Cargando detalles para tu experiencia personalizada...
               </p>
-            </div>
-          </div>
-        </article>
+            </UiCard>
+          </motion.div>
+        )}
 
-        <article className="section panel rsvp-panel">
-          <h2>Confirma tu asistencia</h2>
-          <p>Completa el formulario para reservar tu lugar.</p>
+        {phase === 'error' && (
+          <motion.main
+            key="error"
+            className="mx-auto grid min-h-[calc(100dvh-2rem)] w-full max-w-3xl place-content-center px-4 py-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <UiCard className="border-rose-200 p-8 text-center dark:border-rose-800">
+              <p className="eyebrow">Token no válido</p>
+              <h1 className="mt-2 font-serif text-4xl">Invitación no disponible</h1>
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{loadError}</p>
+              <Link
+                className="mt-4 inline-flex justify-center text-sm font-medium text-rose-700 underline decoration-rose-300 underline-offset-2 dark:text-rose-300"
+                to="/"
+              >
+                Volver al inicio
+              </Link>
+            </UiCard>
+          </motion.main>
+        )}
 
-          <form className="rsvp-form" onSubmit={handleSubmit}>
-            <fieldset>
-              <legend>Asistencia</legend>
-              <label>
-                <input
-                  type="radio"
-                  checked={attending}
-                  onChange={() => setAttending(true)}
-                />
-                Asistire con gusto
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  checked={!attending}
-                  onChange={() => setAttending(false)}
-                />
-                Esta vez no podre asistir
-              </label>
-            </fieldset>
+        {(phase === 'sealed' || phase === 'opening') && bundle && (
+          <motion.div
+            key="envelope"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <InvitationEnvelope
+              guestName={envelopeLabel}
+              eventTitle={bundle.event.eventTitle}
+              phase={phase === 'opening' ? 'opening' : 'sealed'}
+              onOpen={openEnvelope}
+            />
+          </motion.div>
+        )}
 
-            <label>
-              Numero de asistentes
-              <input
-                type="number"
-                min={1}
-                max={guestLimit}
-                value={attending ? guestCount : 0}
-                onChange={(event) => setGuestCount(Number(event.target.value))}
-                disabled={!attending}
-              />
-            </label>
-
-            <label>
-              Restricciones alimentarias
-              <textarea
-                value={dietaryRestrictions}
-                onChange={(event) => setDietaryRestrictions(event.target.value)}
-                rows={3}
-                placeholder="Ejemplo: vegetariano, sin gluten, alergias..."
-              />
-            </label>
-
-            <label>
-              Mensaje para los novios
-              <textarea
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                rows={4}
-                placeholder="Comparte un mensaje especial"
-              />
-            </label>
-
-            <button
-              className="primary-btn"
-              type="submit"
-              disabled={submitState === 'sending'}
-            >
-              {submitState === 'sending' ? 'Enviando...' : 'Enviar confirmacion'}
-            </button>
-          </form>
-
-          {submitState === 'success' && (
-            <p className="success-text">
-              Confirmacion registrada. Gracias por acompanarnos.
-            </p>
-          )}
-          {submitState === 'error' && (
-            <p className="error-text">{submitError}</p>
-          )}
-        </article>
-      </section>
-    </main>
+        {phase === 'revealed' && bundle && (
+          <motion.div
+            key="revealed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <InvitationRevealContent
+              bundle={bundle}
+              memberAttendance={memberAttendance}
+              setMemberAttending={setMemberAttending}
+              dietaryRestrictions={dietaryRestrictions}
+              setDietaryRestrictions={setDietaryRestrictions}
+              message={message}
+              setMessage={setMessage}
+              submitState={submitState}
+              submitError={submitError}
+              onSubmit={handleSubmit}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
