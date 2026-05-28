@@ -1,4 +1,4 @@
-export type { PublicEvent, AdminEventUpsert } from './event'
+export type { PublicEvent, PublicEventTeaser, AdminEventUpsert } from './event'
 export type {
   HomeContentSection,
   HomePageContent,

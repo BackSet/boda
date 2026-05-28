@@ -14,7 +14,7 @@ import com.boda.backend.admin.AdminBankAccountUpsertRequest;
 import com.boda.backend.admin.AdminHomeContentResponse;
 import com.boda.backend.admin.AdminHomeContentUpsertRequest;
 import com.boda.backend.admin.AdminReorderRequest;
-import com.boda.backend.event.PublicEventResponse;
+import com.boda.backend.event.PublicEventTeaserResponse;
 import com.boda.backend.event.WeddingEventService;
 import com.boda.backend.lovestory.LoveStoryService;
 import com.boda.backend.lovestory.PublicLoveStoryResponse;
@@ -143,12 +143,27 @@ public class ContentManagementService {
 
     @Transactional(readOnly = true)
     public PublicHomePageResponse getPublicHomePage() {
-        PublicEventResponse event = weddingEventService.getPublicEvent();
+        PublicEventTeaserResponse event = weddingEventService.getPublicEventTeaser();
         List<PublicHomeContentResponse> sections = homeRepository.findByEnabledTrueOrderByOrderIndexAsc().stream()
+                .filter(this::isHomeSafeSection)
                 .map(this::toPublicHomeResponse)
                 .toList();
         PublicLoveStoryResponse loveStory = loveStoryService.getPublicLoveStory();
         return new PublicHomePageResponse(event, sections, loveStory);
+    }
+
+    private boolean isHomeSafeSection(HomeContentSection section) {
+        String type = section.getSectionType() == null ? "" : section.getSectionType().toLowerCase();
+        if (type.equals("locations") || type.equals("dress_code") || type.equals("timeline") || type.equals("rsvp")) {
+            return false;
+        }
+        String title = section.getTitle() == null ? "" : section.getTitle().toLowerCase();
+        if (title.contains("aporte") || title.contains("cuenta") || title.contains("clabe")
+                || title.contains("direcci") || title.contains("ubicac") || title.contains("itinerar")
+                || title.contains("horario") || title.contains("dress")) {
+            return false;
+        }
+        return true;
     }
 
     @Transactional(readOnly = true)

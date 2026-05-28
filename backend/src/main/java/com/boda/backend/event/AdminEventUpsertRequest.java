@@ -10,5 +10,8 @@ public record AdminEventUpsertRequest(
         @NotBlank @Size(max = 40) String targetDateIso,
         @NotBlank @Size(max = 220) String ceremonyAddress,
         @NotBlank @Size(max = 220) String receptionAddress,
-        @Size(max = 280) String dressCode) {
+        @Size(max = 500) String ceremonyMapUrl,
+        @Size(max = 500) String receptionMapUrl,
+        @Size(max = 280) String dressCode,
+        @Size(max = 120) String cityLabel) {
 }

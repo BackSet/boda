@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <radialGradient id="seal-body" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#f4a4b8" />
+      <stop offset="55%" stop-color="#a83d68" />
+      <stop offset="100%" stop-color="#6c1f3a" />
+    </radialGradient>
+    <radialGradient id="seal-highlight" cx="32%" cy="28%" r="40%">
+      <stop offset="0%" stop-color="#ffe9ef" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="transparent" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <g>
+    <path
+      d="M60 6 L70 16 L84 14 L88 28 L102 34 L98 48 L108 60 L98 72 L102 86 L88 92 L84 106 L70 104 L60 114 L50 104 L36 106 L32 92 L18 86 L22 72 L12 60 L22 48 L18 34 L32 28 L36 14 L50 16 Z"
+      fill="url(#seal-body)"
+      stroke="#3a0d1f"
+      stroke-width="0.8"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M60 6 L70 16 L84 14 L88 28 L102 34 L98 48 L108 60 L98 72 L102 86 L88 92 L84 106 L70 104 L60 114 L50 104 L36 106 L32 92 L18 86 L22 72 L12 60 L22 48 L18 34 L32 28 L36 14 L50 16 Z"
+      fill="url(#seal-highlight)"
+    />
+    <circle cx="60" cy="60" r="26" fill="none" stroke="#fde6ec" stroke-width="0.9" opacity="0.85" />
+    <circle cx="60" cy="60" r="22" fill="none" stroke="#fde6ec" stroke-width="0.6" opacity="0.5" />
+    <text
+      x="60"
+      y="69"
+      text-anchor="middle"
+      font-family="Cormorant Garamond, Georgia, serif"
+      font-size="32"
+      font-style="italic"
+      fill="#fde6ec"
+      opacity="0.95"
+    >A&amp;D</text>
+    <g stroke="#fde6ec" stroke-width="0.6" opacity="0.4">
+      <path d="M44 42 q16 -6 32 0" />
+      <path d="M44 78 q16 6 32 0" />
+    </g>
+  </g>
+</svg>

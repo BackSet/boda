@@ -1,4 +1,5 @@
 import { getAdminToken } from './adminAuth'
+import { clearAdminToken } from './adminAuth'
 import type { AdminEventUpsert, PublicEvent } from './api/event'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
@@ -121,6 +122,11 @@ async function adminFetch(path: string, init?: RequestInit): Promise<Response> {
       ...(init?.headers ?? {}),
     },
   })
+
+  if (response.status === 401) {
+    clearAdminToken()
+    throw new Error('Tu sesión de admin expiró. Inicia sesión nuevamente.')
+  }
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -317,6 +323,14 @@ export type AdminLoveStoryEntry = {
   sortOrder: number
 }
 
+export type AdminLoveStoryEntryPayload = {
+  author: 'PARTNER_A' | 'PARTNER_B'
+  eventDate: string
+  title?: string
+  quote: string
+  imageUrl: string
+}
+
 export type PublicLoveStory = {
   title: string
   subtitle: string | null
@@ -349,6 +363,27 @@ export async function updateAdminLoveStorySettings(
 
 export async function getAdminLoveStoryEntries(): Promise<AdminLoveStoryEntry[]> {
   const response = await adminFetch('/api/admin/love-story/entries')
+  return response.json()
+}
+
+export async function createAdminLoveStoryEntry(
+  payload: AdminLoveStoryEntryPayload,
+): Promise<AdminLoveStoryEntry> {
+  const response = await adminFetch('/api/admin/love-story/entries', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  return response.json()
+}
+
+export async function updateAdminLoveStoryEntry(
+  id: number,
+  payload: AdminLoveStoryEntryPayload,
+): Promise<AdminLoveStoryEntry> {
+  const response = await adminFetch(`/api/admin/love-story/entries/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
   return response.json()
 }
 

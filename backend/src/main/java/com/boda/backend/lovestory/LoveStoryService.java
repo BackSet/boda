@@ -120,6 +120,27 @@ public class LoveStoryService {
     }
 
     @Transactional
+    public AdminLoveStoryEntryResponse createAdminEntry(AdminLoveStoryEntryRequest request) {
+        LoveStoryEntry entry = new LoveStoryEntry();
+        applyAdminUpsert(request, entry);
+        entry.setSortOrder(nextSortOrder(request.author(), entry.getEventDate()));
+        return toAdminEntryResponse(entryRepository.save(entry));
+    }
+
+    @Transactional
+    public AdminLoveStoryEntryResponse updateAdminEntry(Long id, AdminLoveStoryEntryRequest request) {
+        LoveStoryEntry entry = entryRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Momento no encontrado"));
+        LoveStoryAuthor previousAuthor = entry.getAuthor();
+        LocalDate previousDate = entry.getEventDate();
+        applyAdminUpsert(request, entry);
+        if (previousAuthor != request.author() || !previousDate.equals(entry.getEventDate())) {
+            entry.setSortOrder(nextSortOrder(request.author(), entry.getEventDate(), entry.getId()));
+        }
+        return toAdminEntryResponse(entryRepository.save(entry));
+    }
+
+    @Transactional
     public void deleteAdminEntry(Long id) {
         LoveStoryEntry entry = entryRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Momento no encontrado"));
@@ -154,6 +175,14 @@ public class LoveStoryService {
     }
 
     private void applyPartnerUpsert(PartnerLoveStoryEntryRequest request, LoveStoryEntry entry) {
+        entry.setEventDate(parseEventDate(request.eventDate()));
+        entry.setTitle(normalizeOptional(request.title()));
+        entry.setQuote(request.quote().trim());
+        entry.setImageUrl(request.imageUrl().trim());
+    }
+
+    private void applyAdminUpsert(AdminLoveStoryEntryRequest request, LoveStoryEntry entry) {
+        entry.setAuthor(request.author());
         entry.setEventDate(parseEventDate(request.eventDate()));
         entry.setTitle(normalizeOptional(request.title()));
         entry.setQuote(request.quote().trim());

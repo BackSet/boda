@@ -1,4 +1,4 @@
-import { getPartnerToken } from './partnerAuth'
+import { clearPartnerSession, getPartnerToken } from './partnerAuth'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
@@ -54,6 +54,11 @@ async function partnerFetch(path: string, init?: RequestInit): Promise<Response>
       ...(init?.headers ?? {}),
     },
   })
+
+  if (response.status === 401) {
+    clearPartnerSession()
+    throw new Error('Tu sesión expiró. Inicia sesión nuevamente.')
+  }
 
   if (!response.ok) {
     const errorText = await response.text()

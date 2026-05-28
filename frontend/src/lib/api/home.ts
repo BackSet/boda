@@ -1,4 +1,4 @@
-import type { PublicEvent } from './event'
+import type { PublicEventTeaser } from './event'
 
 export type HomeContentSection = {
   id: number
@@ -30,7 +30,7 @@ export type PublicLoveStory = {
 }
 
 export type HomePageContent = {
-  event: PublicEvent
+  event: PublicEventTeaser
   sections: HomeContentSection[]
   loveStory: PublicLoveStory | null
 }

@@ -1,6 +1,14 @@
 import { useState, type FormEvent } from 'react'
 import { RowActionMenu } from '../../components/admin/RowActionMenu'
-import { UiBadge, UiButton, UiCard, UiInput, UiModal, UiTextarea } from '../../components/ui'
+import {
+  UiBadge,
+  UiButton,
+  UiCard,
+  UiConfirmDialog,
+  UiInput,
+  UiModal,
+  UiTextarea,
+} from '../../components/ui'
 import { useAdminBankAccounts } from '../../hooks/useAdminBankAccounts'
 
 export function AdminBankAccountsPage() {
@@ -21,6 +29,7 @@ export function AdminBankAccountsPage() {
   } = useAdminBankAccounts()
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -123,7 +132,7 @@ export function AdminBankAccountsPage() {
                       <UiButton
                         variant="danger"
                         className="justify-start rounded-xl px-3"
-                        onClick={() => void remove(item.id)}
+                        onClick={() => setPendingDeleteId(item.id)}
                       >
                         Eliminar
                       </UiButton>
@@ -134,6 +143,11 @@ export function AdminBankAccountsPage() {
             </tbody>
           </table>
         </div>
+        {!loading && items.length === 0 && (
+          <p className="px-3 py-5 text-sm text-zinc-500 dark:text-zinc-400">
+            No hay cuentas todavía. Crea una cuenta para empezar.
+          </p>
+        )}
       </UiCard>
 
       <UiModal
@@ -254,6 +268,18 @@ export function AdminBankAccountsPage() {
           </label>
         </form>
       </UiModal>
+      <UiConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Eliminar cuenta bancaria"
+        message="Esta acción eliminará la cuenta de forma permanente."
+        confirmLabel="Eliminar"
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId == null) return
+          void remove(pendingDeleteId)
+          setPendingDeleteId(null)
+        }}
+      />
     </section>
   )
 }

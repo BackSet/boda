@@ -58,11 +58,12 @@ export function useInvitationReveal(
     }
 
     setPhase('opening')
-    window.setTimeout(() => {
-      markOpenedInSession(token)
-      setPhase('revealed')
-    }, 2200)
   }, [phase, token, setPhase])
 
-  return { openEnvelope }
+  const markRevealed = useCallback(() => {
+    markOpenedInSession(token)
+    setPhase('revealed')
+  }, [token, setPhase])
+
+  return { openEnvelope, markRevealed }
 }

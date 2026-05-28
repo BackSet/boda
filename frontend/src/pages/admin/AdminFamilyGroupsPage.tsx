@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { RowActionMenu } from '../../components/admin/RowActionMenu'
-import { UiBadge, UiButton, UiCard, UiInput, UiModal } from '../../components/ui'
+import { UiBadge, UiButton, UiCard, UiConfirmDialog, UiInput, UiModal } from '../../components/ui'
 import { useAdminFamilyGroups } from '../../hooks/useAdminFamilyGroups'
 
 export function AdminFamilyGroupsPage() {
@@ -20,6 +20,7 @@ export function AdminFamilyGroupsPage() {
   } = useAdminFamilyGroups()
 
   const [copyMessage, setCopyMessage] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<{ id: number; name: string } | null>(null)
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     await save(event)
@@ -141,7 +142,7 @@ export function AdminFamilyGroupsPage() {
                       <button
                         type="button"
                         className="block w-full px-3 py-2 text-left text-sm text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/40"
-                        onClick={() => void remove(group.id)}
+                        onClick={() => setPendingDelete({ id: group.id, name: group.displayName })}
                       >
                         Eliminar
                       </button>
@@ -152,6 +153,11 @@ export function AdminFamilyGroupsPage() {
             </tbody>
           </table>
         </div>
+        {!loading && items.length === 0 && (
+          <p className="px-3 py-5 text-sm text-zinc-500 dark:text-zinc-400">
+            No hay grupos todavía. Crea un grupo familiar para generar su enlace.
+          </p>
+        )}
         <UiBadge tone="rose">{items.length} grupos</UiBadge>
       </UiCard>
 
@@ -225,6 +231,22 @@ export function AdminFamilyGroupsPage() {
           </div>
         </form>
       </UiModal>
+      <UiConfirmDialog
+        open={pendingDelete !== null}
+        title="Eliminar grupo familiar"
+        message={
+          pendingDelete
+            ? `Se eliminará "${pendingDelete.name}" y sus miembros. Esta acción no se puede deshacer.`
+            : ''
+        }
+        confirmLabel="Eliminar grupo"
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (!pendingDelete) return
+          void remove(pendingDelete.id)
+          setPendingDelete(null)
+        }}
+      />
     </section>
   )
 }

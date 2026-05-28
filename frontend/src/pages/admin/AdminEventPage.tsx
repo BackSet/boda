@@ -10,7 +10,10 @@ const EMPTY: AdminEventUpsert = {
   targetDateIso: '',
   ceremonyAddress: '',
   receptionAddress: '',
+  ceremonyMapUrl: '',
+  receptionMapUrl: '',
   dressCode: '',
+  cityLabel: '',
 }
 
 export function AdminEventPage() {
@@ -25,7 +28,13 @@ export function AdminEventPage() {
     getAdminEvent()
       .then((data) => {
         if (active) {
-          setForm({ ...data, dressCode: data.dressCode ?? '' })
+          setForm({
+            ...data,
+            dressCode: data.dressCode ?? '',
+            ceremonyMapUrl: data.ceremonyMapUrl ?? '',
+            receptionMapUrl: data.receptionMapUrl ?? '',
+            cityLabel: data.cityLabel ?? '',
+          })
         }
       })
       .catch((loadError) => {
@@ -52,6 +61,7 @@ export function AdminEventPage() {
       await updateAdminEvent({
         ...form,
         dressCode: form.dressCode?.trim() || undefined,
+        cityLabel: form.cityLabel?.trim() || undefined,
       })
       setMessage('Evento actualizado correctamente.')
     } catch (submitError) {
@@ -71,7 +81,9 @@ export function AdminEventPage() {
         <p className="eyebrow">Evento</p>
         <h2 className="text-3xl">Datos globales de la boda</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-          Estos datos se muestran en la home y en todas las invitaciones familiares.
+          Los datos exactos (direcciones, mapas, dress code, dirección de cuentas) solo aparecen en las
+          invitaciones individuales con token. La página pública únicamente muestra nombres, fecha,
+          countdown e historia, junto con una zona/ciudad general si la configuras abajo.
         </p>
       </div>
 
@@ -129,6 +141,18 @@ export function AdminEventPage() {
             />
           </label>
           <label className="ui-field-label md:col-span-2">
+            Enlace Google Maps ceremonia (opcional)
+            <UiInput
+              type="url"
+              value={form.ceremonyMapUrl ?? ''}
+              onChange={(e) => setForm((c) => ({ ...c, ceremonyMapUrl: e.target.value }))}
+              placeholder="https://maps.google.com/..."
+            />
+            <span className="mt-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+              Si lo dejás vacío, se genera una búsqueda con la dirección de ceremonia.
+            </span>
+          </label>
+          <label className="ui-field-label md:col-span-2">
             Dirección recepción
             <UiInput
               value={form.receptionAddress}
@@ -137,11 +161,34 @@ export function AdminEventPage() {
             />
           </label>
           <label className="ui-field-label md:col-span-2">
+            Enlace Google Maps recepción (opcional)
+            <UiInput
+              type="url"
+              value={form.receptionMapUrl ?? ''}
+              onChange={(e) => setForm((c) => ({ ...c, receptionMapUrl: e.target.value }))}
+              placeholder="https://maps.google.com/..."
+            />
+            <span className="mt-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+              Si lo dejás vacío, se genera una búsqueda con la dirección de recepción.
+            </span>
+          </label>
+          <label className="ui-field-label md:col-span-2">
             Dress code
             <UiInput
               value={form.dressCode ?? ''}
               onChange={(e) => setForm((c) => ({ ...c, dressCode: e.target.value }))}
             />
+          </label>
+          <label className="ui-field-label md:col-span-2">
+            Ciudad o zona pública (teaser home)
+            <UiInput
+              value={form.cityLabel ?? ''}
+              onChange={(e) => setForm((c) => ({ ...c, cityLabel: e.target.value }))}
+              placeholder="Ej.: Ciudad de México · Roma Norte"
+            />
+            <span className="mt-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">
+              Se muestra en la página pública como guía general. Las direcciones exactas siguen siendo privadas (solo invitación con token).
+            </span>
           </label>
           <div className="md:col-span-2">
             <UiButton type="submit" disabled={saving}>

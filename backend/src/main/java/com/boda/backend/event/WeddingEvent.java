@@ -30,8 +30,17 @@ public class WeddingEvent {
     @Column(nullable = false, length = 220)
     private String receptionAddress;
 
+    @Column(length = 500)
+    private String ceremonyMapUrl;
+
+    @Column(length = 500)
+    private String receptionMapUrl;
+
     @Column(length = 280)
     private String dressCode;
+
+    @Column(length = 120)
+    private String cityLabel;
 
     public Long getId() {
         return id;
@@ -89,11 +98,35 @@ public class WeddingEvent {
         this.receptionAddress = receptionAddress;
     }
 
+    public String getCeremonyMapUrl() {
+        return ceremonyMapUrl;
+    }
+
+    public void setCeremonyMapUrl(String ceremonyMapUrl) {
+        this.ceremonyMapUrl = ceremonyMapUrl;
+    }
+
+    public String getReceptionMapUrl() {
+        return receptionMapUrl;
+    }
+
+    public void setReceptionMapUrl(String receptionMapUrl) {
+        this.receptionMapUrl = receptionMapUrl;
+    }
+
     public String getDressCode() {
         return dressCode;
     }
 
     public void setDressCode(String dressCode) {
         this.dressCode = dressCode;
+    }
+
+    public String getCityLabel() {
+        return cityLabel;
+    }
+
+    public void setCityLabel(String cityLabel) {
+        this.cityLabel = cityLabel;
     }
 }

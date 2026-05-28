@@ -1,6 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import { RowActionMenu } from '../../components/admin/RowActionMenu'
-import { UiBadge, UiButton, UiCard, UiInput, UiModal, UiSelect, UiTextarea } from '../../components/ui'
+import {
+  UiBadge,
+  UiButton,
+  UiCard,
+  UiConfirmDialog,
+  UiInput,
+  UiModal,
+  UiSelect,
+  UiTextarea,
+} from '../../components/ui'
 import { useAdminInvitationSections } from '../../hooks/useAdminInvitationSections'
 
 export function AdminInvitationContentPage() {
@@ -21,9 +30,20 @@ export function AdminInvitationContentPage() {
   } = useAdminInvitationSections()
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
+  const [payloadError, setPayloadError] = useState<string | null>(null)
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setPayloadError(null)
+    if (form.payloadJson && form.payloadJson.trim()) {
+      try {
+        JSON.parse(form.payloadJson)
+      } catch {
+        setPayloadError('El payload JSON no es válido.')
+        return
+      }
+    }
     const ok = await submit()
     if (ok) {
       setModalOpen(false)
@@ -123,7 +143,7 @@ export function AdminInvitationContentPage() {
                       <UiButton
                         variant="danger"
                         className="justify-start rounded-xl px-3"
-                        onClick={() => void remove(item.id)}
+                        onClick={() => setPendingDeleteId(item.id)}
                       >
                         Eliminar
                       </UiButton>
@@ -134,6 +154,11 @@ export function AdminInvitationContentPage() {
             </tbody>
           </table>
         </div>
+        {!loading && items.length === 0 && (
+          <p className="px-3 py-5 text-sm text-zinc-500 dark:text-zinc-400">
+            No hay secciones todavía. Crea una sección para empezar.
+          </p>
+        )}
       </UiCard>
 
       <UiModal
@@ -234,6 +259,33 @@ export function AdminInvitationContentPage() {
                 </code>
               </span>
             )}
+            <div className="mt-1 flex gap-2">
+              <UiButton
+                type="button"
+                variant="ghost"
+                className="rounded-xl px-2 py-1 text-xs"
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    payloadJson:
+                      '{"items":[{"time":"16:00","description":"Ceremonia"},{"time":"18:00","description":"Recepción"}]}',
+                  }))
+                }
+              >
+                Plantilla timeline
+              </UiButton>
+              <UiButton
+                type="button"
+                variant="ghost"
+                className="rounded-xl px-2 py-1 text-xs"
+                onClick={() => setForm((current) => ({ ...current, payloadJson: '' }))}
+              >
+                Limpiar payload
+              </UiButton>
+            </div>
+            {payloadError && (
+              <span className="text-xs text-rose-600 dark:text-rose-300">{payloadError}</span>
+            )}
           </label>
           <label className="inline-flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-200 md:col-span-2">
             <input
@@ -247,6 +299,18 @@ export function AdminInvitationContentPage() {
           </label>
         </form>
       </UiModal>
+      <UiConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Eliminar sección de invitación"
+        message="Esta acción eliminará la sección de forma permanente."
+        confirmLabel="Eliminar"
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId == null) return
+          void remove(pendingDeleteId)
+          setPendingDeleteId(null)
+        }}
+      />
     </section>
   )
 }

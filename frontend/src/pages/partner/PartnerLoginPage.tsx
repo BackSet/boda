@@ -21,7 +21,7 @@ export function PartnerLoginPage() {
 
     try {
       const response = await partnerLogin(username, password)
-      setPartnerSession(response.token, response.displayName)
+      setPartnerSession(response.token, response.displayName, response.expiresAt)
       navigate('/pareja', { replace: true })
     } catch (submitError) {
       setError(

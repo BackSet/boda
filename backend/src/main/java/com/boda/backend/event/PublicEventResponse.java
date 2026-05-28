@@ -7,5 +7,7 @@ public record PublicEventResponse(
         String targetDateIso,
         String ceremonyAddress,
         String receptionAddress,
+        String ceremonyMapUrl,
+        String receptionMapUrl,
         String dressCode) {
 }

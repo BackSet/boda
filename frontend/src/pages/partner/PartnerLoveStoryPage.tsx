@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { UiButton, UiCard, UiInput, UiModal, UiTextarea } from '../../components/ui'
+import { UiButton, UiCard, UiConfirmDialog, UiInput, UiModal, UiTextarea } from '../../components/ui'
 import {
   createPartnerLoveStoryEntry,
   deletePartnerLoveStoryEntry,
@@ -25,6 +25,7 @@ export function PartnerLoveStoryPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<PartnerLoveStoryEntry | null>(null)
   const [form, setForm] = useState<PartnerLoveStoryEntryPayload>(EMPTY_FORM)
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -77,6 +78,11 @@ export function PartnerLoveStoryPage() {
       quote: form.quote.trim(),
       imageUrl: form.imageUrl.trim(),
     }
+    if (payload.quote.length < 8) {
+      setSaving(false)
+      setError('La frase debe tener al menos 8 caracteres.')
+      return
+    }
 
     try {
       if (editing) {
@@ -99,7 +105,6 @@ export function PartnerLoveStoryPage() {
   }
 
   async function remove(id: number) {
-    if (!window.confirm('¿Eliminar este momento?')) return
     setError(null)
     try {
       await deletePartnerLoveStoryEntry(id)
@@ -118,6 +123,9 @@ export function PartnerLoveStoryPage() {
         <p className="text-sm text-zinc-700 dark:text-zinc-200">
           Solo ves <strong>tus</strong> momentos. El contenido de tu pareja permanece oculto hasta
           que el administrador publique la historia en la página principal.
+        </p>
+        <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+          Tip rápido: usa fecha de hoy y una frase corta para crear el primer momento en segundos.
         </p>
       </UiCard>
 
@@ -153,6 +161,9 @@ export function PartnerLoveStoryPage() {
                 src={item.imageUrl}
                 alt={item.title ?? 'Momento'}
                 className="h-28 w-full rounded-xl object-cover"
+                onError={(event) => {
+                  event.currentTarget.style.display = 'none'
+                }}
               />
             ) : (
               <div className="flex h-28 items-center justify-center rounded-xl bg-zinc-100 text-xs text-zinc-500 dark:bg-zinc-800">
@@ -170,7 +181,7 @@ export function PartnerLoveStoryPage() {
               <UiButton type="button" onClick={() => openEdit(item)}>
                 Editar
               </UiButton>
-              <UiButton type="button" variant="ghost" onClick={() => void remove(item.id)}>
+              <UiButton type="button" variant="ghost" onClick={() => setPendingDeleteId(item.id)}>
                 Eliminar
               </UiButton>
             </div>
@@ -203,6 +214,18 @@ export function PartnerLoveStoryPage() {
               onChange={(event) => setForm((c) => ({ ...c, eventDate: event.target.value }))}
               required
             />
+            <div className="flex gap-2">
+              <UiButton
+                type="button"
+                variant="ghost"
+                className="rounded-xl px-2 py-1 text-xs"
+                onClick={() =>
+                  setForm((c) => ({ ...c, eventDate: new Date().toISOString().slice(0, 10) }))
+                }
+              >
+                Usar fecha de hoy
+              </UiButton>
+            </div>
           </label>
           <label className="grid gap-1 text-sm font-medium">
             Título (opcional)
@@ -219,6 +242,21 @@ export function PartnerLoveStoryPage() {
               rows={3}
               required
             />
+            <div className="flex gap-2">
+              <UiButton
+                type="button"
+                variant="ghost"
+                className="rounded-xl px-2 py-1 text-xs"
+                onClick={() =>
+                  setForm((c) => ({
+                    ...c,
+                    quote: 'Ese día comenzó nuestra historia para siempre.',
+                  }))
+                }
+              >
+                Plantilla rápida
+              </UiButton>
+            </div>
           </label>
           <label className="grid gap-1 text-sm font-medium">
             URL de imagen
@@ -235,10 +273,26 @@ export function PartnerLoveStoryPage() {
               src={form.imageUrl}
               alt="Vista previa"
               className="max-h-40 w-full rounded-xl object-cover"
+              onError={(event) => {
+                event.currentTarget.style.display = 'none'
+                setError('No se pudo cargar vista previa. Verifica la URL de imagen.')
+              }}
             />
           )}
         </form>
       </UiModal>
+      <UiConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Eliminar momento"
+        message="Este momento se eliminará de forma permanente."
+        confirmLabel="Eliminar"
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId == null) return
+          void remove(pendingDeleteId)
+          setPendingDeleteId(null)
+        }}
+      />
     </section>
   )
 }

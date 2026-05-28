@@ -1,5 +1,8 @@
 package com.boda.backend.event;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,17 @@ public class WeddingEventService {
     }
 
     @Transactional(readOnly = true)
+    public PublicEventTeaserResponse getPublicEventTeaser() {
+        WeddingEvent event = getOrCreateDefault();
+        return new PublicEventTeaserResponse(
+                event.getCoupleDisplayName(),
+                event.getEventTitle(),
+                event.getEventDate(),
+                event.getTargetDateIso(),
+                normalizeOptional(event.getCityLabel()));
+    }
+
+    @Transactional(readOnly = true)
     public AdminEventUpsertRequest getAdminEvent() {
         WeddingEvent event = getOrCreateDefault();
         return new AdminEventUpsertRequest(
@@ -27,7 +41,10 @@ public class WeddingEventService {
                 event.getTargetDateIso(),
                 event.getCeremonyAddress(),
                 event.getReceptionAddress(),
-                event.getDressCode());
+                normalizeOptional(event.getCeremonyMapUrl()),
+                normalizeOptional(event.getReceptionMapUrl()),
+                event.getDressCode(),
+                normalizeOptional(event.getCityLabel()));
     }
 
     @Transactional
@@ -39,7 +56,10 @@ public class WeddingEventService {
         event.setTargetDateIso(request.targetDateIso().trim());
         event.setCeremonyAddress(request.ceremonyAddress().trim());
         event.setReceptionAddress(request.receptionAddress().trim());
+        event.setCeremonyMapUrl(normalizeOptional(request.ceremonyMapUrl()));
+        event.setReceptionMapUrl(normalizeOptional(request.receptionMapUrl()));
         event.setDressCode(normalizeOptional(request.dressCode()));
+        event.setCityLabel(normalizeOptional(request.cityLabel()));
         return toPublicResponse(repository.save(event));
     }
 
@@ -55,6 +75,7 @@ public class WeddingEventService {
             event.setCeremonyAddress("Parroquia de San Miguel, Centro Historico");
             event.setReceptionAddress("Casa Editorial Roma Norte");
             event.setDressCode("Formal elegante · tonos pastel y neutros");
+            event.setCityLabel("Ciudad de Mexico");
             return repository.save(event);
         });
     }
@@ -67,7 +88,17 @@ public class WeddingEventService {
                 event.getTargetDateIso(),
                 event.getCeremonyAddress(),
                 event.getReceptionAddress(),
+                resolveMapUrl(event.getCeremonyMapUrl(), event.getCeremonyAddress()),
+                resolveMapUrl(event.getReceptionMapUrl(), event.getReceptionAddress()),
                 event.getDressCode());
+    }
+
+    private String resolveMapUrl(String customUrl, String address) {
+        if (customUrl != null && !customUrl.isBlank()) {
+            return customUrl.trim();
+        }
+        return "https://www.google.com/maps/search/?api=1&query="
+                + URLEncoder.encode(address, StandardCharsets.UTF_8);
     }
 
     private String normalizeOptional(String value) {

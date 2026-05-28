@@ -169,3 +169,48 @@ export function UiModal({
     </div>
   )
 }
+
+export function UiConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = 'Confirmar',
+  cancelLabel = 'Cancelar',
+  onConfirm,
+  onClose,
+  loading = false,
+}: {
+  open: boolean
+  title: string
+  message: ReactNode
+  confirmLabel?: string
+  cancelLabel?: string
+  onConfirm: () => void
+  onClose: () => void
+  loading?: boolean
+}) {
+  return (
+    <UiModal
+      open={open}
+      title={title}
+      onClose={onClose}
+      footer={
+        <>
+          <UiButton type="button" onClick={onClose}>
+            {cancelLabel}
+          </UiButton>
+          <UiButton
+            type="button"
+            variant="danger"
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading ? 'Procesando...' : confirmLabel}
+          </UiButton>
+        </>
+      }
+    >
+      <p className="text-sm text-zinc-600 dark:text-zinc-300">{message}</p>
+    </UiModal>
+  )
+}

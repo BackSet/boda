@@ -30,7 +30,7 @@ export function InvitationPage() {
 
   const dataReady = !loading && !loadError && bundle !== null
   const { phase, setPhase } = useInvitationRevealContext()
-  const { openEnvelope } = useInvitationReveal(token, dataReady, setPhase, phase)
+  const { openEnvelope, markRevealed } = useInvitationReveal(token, dataReady, setPhase, phase)
 
   const envelopeLabel = useMemo(() => {
     if (!bundle) {
@@ -192,6 +192,7 @@ export function InvitationPage() {
               eventTitle={bundle.event.eventTitle}
               phase={phase === 'opening' ? 'opening' : 'sealed'}
               onOpen={openEnvelope}
+              onAnimationComplete={markRevealed}
             />
           </motion.div>
         )}

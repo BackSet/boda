@@ -37,6 +37,7 @@ public class SeedDataConfig {
             event.setCeremonyAddress("Parroquia de San Miguel, Centro Historico");
             event.setReceptionAddress("Casa Editorial Roma Norte");
             event.setDressCode("Formal elegante · tonos pastel y neutros");
+            event.setCityLabel("Ciudad de Mexico");
             repository.save(event);
         };
     }

@@ -1,16 +1,36 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { LoveStoryTimeline } from '../../components/wedding/LoveStoryTimeline'
-import { UiBadge, UiButton, UiCard, UiInput, UiTextarea } from '../../components/ui'
 import {
+  UiBadge,
+  UiButton,
+  UiCard,
+  UiConfirmDialog,
+  UiInput,
+  UiModal,
+  UiSelect,
+  UiTextarea,
+} from '../../components/ui'
+import {
+  createAdminLoveStoryEntry,
   deleteAdminLoveStoryEntry,
   getAdminLoveStoryEntries,
   getAdminLoveStoryPreview,
   getAdminLoveStorySettings,
+  updateAdminLoveStoryEntry,
   updateAdminLoveStorySettings,
   type AdminLoveStoryEntry,
+  type AdminLoveStoryEntryPayload,
   type AdminLoveStorySettings,
   type PublicLoveStory,
 } from '../../lib/adminApi'
+
+const EMPTY_ENTRY: AdminLoveStoryEntryPayload = {
+  author: 'PARTNER_A',
+  eventDate: '',
+  title: '',
+  quote: '',
+  imageUrl: '',
+}
 
 export function AdminLoveStoryPage() {
   const [settings, setSettings] = useState<AdminLoveStorySettings | null>(null)
@@ -18,8 +38,13 @@ export function AdminLoveStoryPage() {
   const [preview, setPreview] = useState<PublicLoveStory | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [entrySaving, setEntrySaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editing, setEditing] = useState<AdminLoveStoryEntry | null>(null)
+  const [entryForm, setEntryForm] = useState<AdminLoveStoryEntryPayload>(EMPTY_ENTRY)
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -70,13 +95,52 @@ export function AdminLoveStoryPage() {
   }
 
   async function removeEntry(id: number) {
-    if (!window.confirm('¿Eliminar este momento?')) return
     try {
       await deleteAdminLoveStoryEntry(id)
       setMessage('Momento eliminado.')
       await load()
     } catch (removeError) {
       setError(removeError instanceof Error ? removeError.message : 'No se pudo eliminar')
+    }
+  }
+
+  function openCreate() {
+    setEditing(null)
+    setEntryForm(EMPTY_ENTRY)
+    setModalOpen(true)
+  }
+
+  function openEdit(entry: AdminLoveStoryEntry) {
+    setEditing(entry)
+    setEntryForm({
+      author: entry.author,
+      eventDate: entry.eventDate,
+      title: entry.title ?? '',
+      quote: entry.quote,
+      imageUrl: entry.imageUrl,
+    })
+    setModalOpen(true)
+  }
+
+  async function submitEntry(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setEntrySaving(true)
+    setError(null)
+    try {
+      if (editing) {
+        await updateAdminLoveStoryEntry(editing.id, entryForm)
+        setMessage('Momento actualizado.')
+      } else {
+        await createAdminLoveStoryEntry(entryForm)
+        setMessage('Momento creado.')
+      }
+      setModalOpen(false)
+      setEntryForm(EMPTY_ENTRY)
+      await load()
+    } catch (entryError) {
+      setError(entryError instanceof Error ? entryError.message : 'No se pudo guardar el momento')
+    } finally {
+      setEntrySaving(false)
     }
   }
 
@@ -100,6 +164,22 @@ export function AdminLoveStoryPage() {
           </a>
           . Aquí activás la sección y publicás en el home.
         </p>
+        <div className="mt-3 flex gap-2">
+          <UiButton variant="primary" type="button" onClick={openCreate}>
+            Nuevo momento (admin)
+          </UiButton>
+          <UiButton
+            type="button"
+            onClick={() =>
+              setEntryForm((c) => ({
+                ...c,
+                eventDate: new Date().toISOString().slice(0, 10),
+              }))
+            }
+          >
+            Fecha de hoy
+          </UiButton>
+        </div>
       </div>
 
       {message && (
@@ -188,9 +268,18 @@ export function AdminLoveStoryPage() {
                 <td className="px-3 py-2">{entry.eventDate}</td>
                 <td className="max-w-xs truncate px-3 py-2">{entry.quote}</td>
                 <td className="px-3 py-2">
-                  <UiButton type="button" variant="ghost" onClick={() => void removeEntry(entry.id)}>
-                    Eliminar
-                  </UiButton>
+                  <div className="flex gap-2">
+                    <UiButton type="button" variant="ghost" onClick={() => openEdit(entry)}>
+                      Editar
+                    </UiButton>
+                    <UiButton
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setPendingDeleteId(entry.id)}
+                    >
+                      Eliminar
+                    </UiButton>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -213,6 +302,89 @@ export function AdminLoveStoryPage() {
           />
         </div>
       )}
+      <UiModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Editar momento' : 'Nuevo momento (admin)'}
+        footer={
+          <UiButton
+            variant="primary"
+            form="admin-love-entry-form"
+            type="submit"
+            disabled={entrySaving}
+          >
+            {entrySaving ? 'Guardando...' : editing ? 'Actualizar' : 'Crear'}
+          </UiButton>
+        }
+      >
+        <form id="admin-love-entry-form" className="grid gap-3" onSubmit={submitEntry}>
+          <label className="grid gap-1 text-sm font-medium">
+            Autor
+            <UiSelect
+              value={entryForm.author}
+              onChange={(event) =>
+                setEntryForm((c) => ({
+                  ...c,
+                  author: event.target.value as 'PARTNER_A' | 'PARTNER_B',
+                }))
+              }
+            >
+              <option value="PARTNER_A">{settings.partnerADisplayName}</option>
+              <option value="PARTNER_B">{settings.partnerBDisplayName}</option>
+            </UiSelect>
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            Fecha
+            <UiInput
+              type="date"
+              value={entryForm.eventDate}
+              onChange={(event) =>
+                setEntryForm((c) => ({ ...c, eventDate: event.target.value }))
+              }
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            Título (opcional)
+            <UiInput
+              value={entryForm.title ?? ''}
+              onChange={(event) => setEntryForm((c) => ({ ...c, title: event.target.value }))}
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            Frase
+            <UiTextarea
+              rows={3}
+              value={entryForm.quote}
+              onChange={(event) => setEntryForm((c) => ({ ...c, quote: event.target.value }))}
+              required
+            />
+          </label>
+          <label className="grid gap-1 text-sm font-medium">
+            URL de imagen
+            <UiInput
+              type="url"
+              value={entryForm.imageUrl}
+              onChange={(event) =>
+                setEntryForm((c) => ({ ...c, imageUrl: event.target.value }))
+              }
+              required
+            />
+          </label>
+        </form>
+      </UiModal>
+      <UiConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Eliminar momento"
+        message="Esta acción eliminará el momento seleccionado de forma permanente."
+        confirmLabel="Eliminar"
+        onClose={() => setPendingDeleteId(null)}
+        onConfirm={() => {
+          if (pendingDeleteId == null) return
+          void removeEntry(pendingDeleteId)
+          setPendingDeleteId(null)
+        }}
+      />
     </section>
   )
 }
